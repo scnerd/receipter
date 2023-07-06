@@ -1,0 +1,24 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+uvicorn = "*"
+watchfiles = "*"
+boto3 = "*"
+easygui = "*"
+pydantic = "*"
+typer = "*"
+django = "*"
+django-extensions = "*"
+
+[dev-packages]
+black = {version = "*", extras = ["d"]}
+ruff = "*"
+jupyterlab = "*"
+ipython = "*"
+rich = {version = "*", extras = ["juypter"]}
+
+[requires]
+python_version = "3.10"
