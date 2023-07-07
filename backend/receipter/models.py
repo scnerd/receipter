@@ -99,7 +99,7 @@ class ReceiptFile(models.Model):
 
 class Receipt(models.Model):
     # user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
-    source = models.ForeignKey(ReceiptFile, on_delete=models.CASCADE, null=True, blank=True)
+    source = models.OneToOneField(ReceiptFile, on_delete=models.CASCADE, null=True, blank=True)
     location = models.ForeignKey(
         Location, on_delete=models.CASCADE, null=True, blank=True
     )

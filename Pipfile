@@ -8,10 +8,12 @@ uvicorn = "*"
 watchfiles = "*"
 boto3 = "*"
 easygui = "*"
-pydantic = "*"
+pydantic = ">=2"
 typer = "*"
 django = "*"
 django-extensions = "*"
+django-rest-framework = "*"
+django-cors-headers = "*"
 
 [dev-packages]
 black = {version = "*", extras = ["d"]}
