@@ -3,21 +3,21 @@ from django.db import models
 
 
 class ProductCategory(models.Model):
-    name = models.TextField()
+    name = models.TextField(unique=True, db_index=True)
 
     def __str__(self):
         return self.name
 
 
 class Store(models.Model):
-    name = models.TextField()
+    name = models.TextField(unique=True, db_index=True)
 
     def __str__(self):
         return self.name
 
 
 class StoreAlias(models.Model):
-    name = models.TextField()
+    name = models.TextField(unique=True, db_index=True)
     store = models.ForeignKey(Store, on_delete=models.CASCADE)
 
     def __str__(self):
@@ -25,18 +25,30 @@ class StoreAlias(models.Model):
 
 
 class Location(models.Model):
-    name = models.TextField()
+    name = models.TextField(unique=True, db_index=True)
     store = models.ForeignKey(Store, on_delete=models.CASCADE)
 
     def __str__(self):
         return f"{self.store.name}[{self.name}]"
 
 
+class Brand(models.Model):
+    name = models.TextField(unique=True, db_index=True)
+
+
+class Packaging(models.Model):
+    unit = models.ForeignKey("Unit", on_delete=models.SET_NULL, null=True, blank=True)
+    quantity = models.FloatField(null=True, blank=True)
+    packaging_type = models.TextField(null=True, blank=True, help_text="Bag, Box, etc.")
+
+
 class Product(models.Model):
     category = models.ForeignKey(
-        ProductCategory, on_delete=models.CASCADE, null=True, blank=True
+        ProductCategory, on_delete=models.SET_NULL, null=True, blank=True
     )
-    name = models.TextField()
+    name = models.TextField(unique=True, db_index=True)
+    brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True)
+    packaging = models.ForeignKey(Packaging, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -75,14 +87,14 @@ class ProductCode(models.Model):
 
 
 class Unit(models.Model):
-    name = models.TextField(unique=True)
+    name = models.TextField(unique=True, db_index=True)
 
     def __str__(self):
         return self.name
 
 
 class UnitAlias(models.Model):
-    text = models.TextField(unique=True)
+    text = models.TextField(unique=True, db_index=True)
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
 
     def __str__(self):

@@ -11,13 +11,13 @@
     </v-row>
     <v-row>
       <v-progress-circular v-if="!receipts" indeterminate color="primary"></v-progress-circular>
-      <v-list v-else lines="one">
+      <v-expansion-panels v-else>
         <Receipt
           v-for="receipt in receipts"
           :key="receipt.id"
           :receipt="receipt"
         />
-      </v-list>
+      </v-expansion-panels>
     </v-row>
   </v-container>
 </template>
@@ -25,6 +25,7 @@
 <script setup lang="ts">
 import {ref} from 'vue'
 import Receipt from './Receipt.vue'
+import {handleErrors} from "@/utils";
 
 const receipts = ref(null)
 const showFileInput = ref(false)
@@ -35,13 +36,6 @@ const uploadingReceiptProgress = ref(0)
 fetch('http://localhost:8000/api/receipts/')
   .then(response => response.json())
   .then(data => receipts.value = data.results)
-
-function handleErrors(response) {
-    if (!response.ok) {
-        throw Error(response.statusText);
-    }
-    return response;
-}
 
 async function onFileChange(e) {
   showFileInput.value = false
