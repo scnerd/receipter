@@ -1,19 +1,31 @@
 <template>
   <v-container class="text-center">
     <v-row>
-      <v-btn-group>
-        <v-btn color="primary" :block="true" variant="outlined" @click="showFileInput = !showFileInput">Scan New
-          Receipt
-        </v-btn>
-      </v-btn-group>
-      <v-file-input v-if="showFileInput" accept="image/*" v-model="file" @change="onFileChange"></v-file-input>
-      <v-progress-linear v-if="uploadingReceipt" v-model="uploadingReceiptProgress"></v-progress-linear>
+      <v-expansion-panels>
+        <v-expansion-panel
+          title=""
+        >
+          <v-expansion-panel-title>
+            Scan New Receipt
+          </v-expansion-panel-title>
+          <v-expansion-panel-text>
+            <v-row align="center" justify="center">
+              <v-col cols="1">
+                <v-progress-circular v-model="uploadingReceiptProgress" indeterminate></v-progress-circular>
+              </v-col>
+              <v-col cols="11">
+                <v-file-input accept="image/*" v-model="file" @change="onFileChange"></v-file-input>
+              </v-col>
+            </v-row>
+          </v-expansion-panel-text>
+        </v-expansion-panel>
+      </v-expansion-panels>
     </v-row>
     <v-row>
-      <v-progress-circular v-if="!receipts" indeterminate color="primary"></v-progress-circular>
+      <v-progress-circular v-if="!receiptStore.initialized" indeterminate color="primary"></v-progress-circular>
       <v-expansion-panels v-else>
         <Receipt
-          v-for="receipt in receipts"
+          v-for="receipt in receiptStore.receipts"
           :key="receipt.id"
           :receipt="receipt"
         />
@@ -26,8 +38,9 @@
 import {ref} from 'vue'
 import Receipt from './Receipt.vue'
 import {handleErrors} from "@/utils";
+import {useReceiptsStore} from "@/store/receipts";
 
-const receipts = ref(null)
+const receiptStore = useReceiptsStore()
 const showFileInput = ref(false)
 const file = ref(null)
 const uploadingReceipt = ref(false)
@@ -45,20 +58,16 @@ async function onFileChange(e) {
   let formdata = new FormData();
   formdata.append("image_file", e.target.files[0]);
 
-  let requestOptions = {
-    method: 'POST',
-    body: formdata,
-  };
-
-  let receipt_file = await fetch("http://localhost:8000/api/receipt-files/", requestOptions)
+  let analysis_result = await fetch(
+    "http://localhost:8000/api/receipt-files/analyze/",
+    {method: 'POST', body: formdata}
+  )
     .then(handleErrors)
     .then(response => response.json())
 
-  let analysis_result = await fetch(`http://localhost:8000/api/receipt-files/${receipt_file.id}/analyze/`, {method: 'POST'})
-    .then(handleErrors)
-    .then(response => response.json())
-
-  let new_receipt = await fetch(`http://localhost:8000/api/receipts/${analysis_result.receipt_id}/`)
+  let new_receipt = await fetch(
+    `http://localhost:8000/api/receipts/${analysis_result.receipt_id}/`
+  )
     .then(handleErrors)
     .then(response => response.json())
 

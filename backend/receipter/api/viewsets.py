@@ -1,21 +1,52 @@
+import decimal
 import json
 import logging
 import re
+from collections import defaultdict
 from datetime import date
-from io import StringIO
+from io import StringIO, BytesIO
 
 import boto3
+import fitz
 from dateutil import parser
 from django.core.files import File
+from django.core.files.images import ImageFile
 from django.db.transaction import atomic
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.parsers import MultiPartParser
+from rest_framework.request import Request
 from rest_framework.response import Response
+from rich import print
 
-from receipter.api.serializers import ProductCategorySerializer, StoreSerializer, StoreAliasSerializer, \
-    LocationSerializer, ProductAliasSerializer, ProductSerializer, ProductCodeSerializer, UnitSerializer, \
-    ReceiptFileSerializer, ReceiptSerializer, LineItemSerializer, UnitAliasSerializer
-from receipter.models import ProductCategory, Store, StoreAlias, Location, Product, ProductAlias, ProductCode, Unit, UnitAlias, ReceiptFile, Receipt, LineItem
+from receipter.api.serializers import (
+    ProductCategorySerializer,
+    StoreSerializer,
+    StoreAliasSerializer,
+    LocationSerializer,
+    ProductAliasSerializer,
+    ProductSerializer,
+    ProductCodeSerializer,
+    UnitSerializer,
+    ReceiptFileSerializer,
+    ReceiptSerializer,
+    LineItemSerializer,
+    UnitAliasSerializer,
+)
+from receipter.models import (
+    ProductCategory,
+    Store,
+    StoreAlias,
+    Location,
+    Product,
+    ProductAlias,
+    ProductCode,
+    Unit,
+    UnitAlias,
+    ReceiptFile,
+    Receipt,
+    LineItem,
+)
 from receipter.textract.models import AnalyzeExpenseResponse
 
 
@@ -23,6 +54,7 @@ class ProductCategoryViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows ProductCategory to be viewed or edited.
     """
+
     queryset = ProductCategory.objects.all()
     serializer_class = ProductCategorySerializer
     # permission_classes = (permissions.IsAuthenticated,)
@@ -32,6 +64,7 @@ class StoreViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows Store to be viewed or edited.
     """
+
     queryset = Store.objects.all()
     serializer_class = StoreSerializer
     # permission_classes = (permissions.IsAuthenticated,)
@@ -41,6 +74,7 @@ class StoreAliasViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows StoreAlias to be viewed or edited.
     """
+
     queryset = StoreAlias.objects.all()
     serializer_class = StoreAliasSerializer
     # permission_classes = (permissions.IsAuthenticated,)
@@ -50,6 +84,7 @@ class LocationViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows Location to be viewed or edited.
     """
+
     queryset = Location.objects.all()
     serializer_class = LocationSerializer
 
@@ -58,7 +93,8 @@ class ProductViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows Product to be viewed or edited.
     """
-    queryset = Product.objects.all()
+
+    queryset = Product.objects.select_related("brand", "packaging__unit").all()
     serializer_class = ProductSerializer
 
 
@@ -66,6 +102,7 @@ class ProductAliasViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows ProductAlias to be viewed or edited.
     """
+
     queryset = ProductAlias.objects.all()
     serializer_class = ProductAliasSerializer
 
@@ -74,6 +111,7 @@ class ProductCodeViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows ProductCode to be viewed or edited.
     """
+
     queryset = ProductCode.objects.all()
     serializer_class = ProductCodeSerializer
 
@@ -82,6 +120,7 @@ class UnitViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows Unit to be viewed or edited.
     """
+
     queryset = Unit.objects.all()
     serializer_class = UnitSerializer
 
@@ -90,6 +129,7 @@ class UnitAliasViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows UnitAlias to be viewed or edited.
     """
+
     queryset = UnitAlias.objects.all()
     serializer_class = UnitAliasSerializer
 
@@ -98,6 +138,7 @@ class ReceiptFileViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows ReceiptFile to be viewed or edited.
     """
+
     queryset = ReceiptFile.objects.all()
     serializer_class = ReceiptFileSerializer
 
@@ -108,7 +149,9 @@ class ReceiptFileViewSet(viewsets.ModelViewSet):
         return text
 
     @staticmethod
-    def _parse_summary_field(response: AnalyzeExpenseResponse, field_name: str, finalizer):
+    def _parse_summary_field(
+        response: AnalyzeExpenseResponse, field_name: str, finalizer
+    ):
         candidate_values = {
             prop.value_detection.text
             for document in response.expense_documents
@@ -117,40 +160,90 @@ class ReceiptFileViewSet(viewsets.ModelViewSet):
         }
         match len(candidate_values):
             case 0:
-                return finalizer(None)
+                return finalizer("")
             case 1:
                 return finalizer(candidate_values.pop())
             case _:
                 raise ValueError(f"Multiple different values found for {field_name}")
 
-    @action(detail=True, methods=['get', 'post'])
-    def analyze(self, request, pk):
-        receipt_file: ReceiptFile = self.get_object()
+    @staticmethod
+    def to_decimal(value: str) -> decimal.Decimal | None:
+        if value is None:
+            return None
+        value = re.sub(r"[\s$]+", "", value)
+        if not value:
+            return None
         try:
-            receipt = Receipt.objects.get(source=receipt_file)
-            return Response(data=dict(success=True, receipt_id=receipt.pk))
-        except Receipt.DoesNotExist:
-            pass
+            return decimal.Decimal(value)
+        except (ValueError, decimal.InvalidOperation) as ex:
+            raise ValueError(f"Could not convert {value} to decimal") from ex
 
-        if not receipt_file.analysis_file:
-            textract = boto3.client("textract")
-            response_raw = textract.analyze_expense(
-                Document=dict(Bytes=receipt_file.image_file.open('rb').read()),
-            )
-            receipt_file.analysis_file = File(StringIO(json.dumps(response_raw)), receipt_file.image_file.name + '.json')
-            receipt_file.save()
-        else:
-            response_raw = json.load(receipt_file.analysis_file.open('r'))
+    @action(detail=False, methods=["post"], parser_classes=(MultiPartParser,))
+    def analyze(self, request: Request) -> Response:
+        (file_obj,) = request.FILES.values()
+        file_name = file_obj.name
+        img_data = file_obj.read()
+        print(file_obj.__dict__)
 
-        response = AnalyzeExpenseResponse.model_validate(response_raw)
+        match file_obj.content_type.split("/"):
+            case ("application", "pdf"):
+                doc = fitz.Document(stream=img_data)
+                page = doc[0]
+                pixmap = page.get_pixmap()
+                img_data = pixmap.tobytes()
+            case ("image", _):
+                pass
+            case _:
+                return Response(
+                    data=dict(
+                        error=f"Unsupported file type: {file_obj.content_type}",
+                    ),
+                    status=400,
+                )
+
+        file_obj = BytesIO(img_data)
 
         with atomic():
-            store_name = self._parse_summary_field(response, "NAME", self._sanitize_text)
-            address = self._parse_summary_field(response, "ADDRESS_BLOCK", self._sanitize_text)
+            textract = boto3.client("textract")
+            response_raw = textract.analyze_expense(
+                Document=dict(Bytes=img_data),
+            )
+
+            receipt_file: ReceiptFile = ReceiptFile.objects.create(
+                image_file=ImageFile(file_obj, name=file_name),
+                analysis_file=File(
+                    StringIO(json.dumps(response_raw)),
+                ),
+            )
+            try:
+                receipt = Receipt.objects.get(source=receipt_file)
+                return Response(data=dict(success=True, receipt_id=receipt.pk))
+            except Receipt.DoesNotExist:
+                pass
+
+            response = AnalyzeExpenseResponse.model_validate(response_raw)
+            print(response)
+
+            summary_fields = defaultdict(list)
+            for doc in response.expense_documents:
+                for field in doc.summary_fields:
+                    summary_fields[field.type_.text].append(field.value_detection.text)
+
+            store_name = self._parse_summary_field(
+                response, "NAME", self._sanitize_text
+            )
+            address = self._parse_summary_field(
+                response, "ADDRESS_BLOCK", self._sanitize_text
+            )
             invoice_date = self._parse_summary_field(
                 response,
                 "INVOICE_RECEIPT_DATE",
                 lambda v: parser.parse(v) if v else date.today(),
+            )
+            total_amount = (
+                self.to_decimal(summary_fields["TOTAL"][0])
+                if len(summary_fields["TOTAL"]) == 1
+                else None
             )
 
             try:
@@ -169,6 +262,7 @@ class ReceiptFileViewSet(viewsets.ModelViewSet):
                 location=location,
                 date=invoice_date,
                 source=receipt_file,
+                total_paid=total_amount,
             )
 
             logging.info(f"Generating new receipt at {location} on {invoice_date}")
@@ -224,7 +318,9 @@ class ReceiptFileViewSet(viewsets.ModelViewSet):
 
                         match (product_code, product_alias):
                             case (None, None):
-                                raise ValueError(f"Product unknown for entry {item_fields}")
+                                raise ValueError(
+                                    f"Product unknown for entry {item_fields}"
+                                )
                             case (None, x) | (x, None):
                                 product = x.product
                             case (x, y) if x.product == y.product:
@@ -235,14 +331,16 @@ class ReceiptFileViewSet(viewsets.ModelViewSet):
                                 )
 
                         price = simplified_item.get("PRICE").split()[0]
-                        quantity, _, unit1 = simplified_item.get("QUANTITY", "").partition(" ")
-                        unit_price, _, unit2 = simplified_item.get("UNIT_PRICE", "").partition(
-                            "/"
-                        )
+                        quantity, _, unit1 = simplified_item.get(
+                            "QUANTITY", ""
+                        ).partition(" ")
+                        unit_price, _, unit2 = simplified_item.get(
+                            "UNIT_PRICE", ""
+                        ).partition("/")
 
-                        price = float(price.strip()) if price else None
-                        quantity = float(quantity.strip()) if quantity else None
-                        unit_price = float(unit_price.strip()) if unit_price else None
+                        price = self.to_decimal(price)
+                        quantity = self.to_decimal(quantity)
+                        unit_price = self.to_decimal(unit_price)
 
                         match (unit1.strip(), unit2.strip()):
                             case ("", ""):
@@ -290,7 +388,8 @@ class ReceiptViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows Receipt to be viewed or edited.
     """
-    queryset = Receipt.objects.all().order_by('-date')
+
+    queryset = Receipt.objects.all().order_by("-date")
     serializer_class = ReceiptSerializer
 
 
@@ -298,5 +397,6 @@ class LineItemViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows LineItem to be viewed or edited.
     """
+
     queryset = LineItem.objects.all()
     serializer_class = LineItemSerializer

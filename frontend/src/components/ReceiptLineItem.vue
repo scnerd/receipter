@@ -1,68 +1,33 @@
 <template>
-<!--  <v-container>-->
-      <v-form style="width:100%">
-        <v-row>
-          <v-col col="2">
-            <v-text-field label="Product" v-model="line_item.product.name"/>
-          </v-col>
-          <v-col col="2">
-            <v-text-field label="Quantity" v-model="line_item.quantity"/>
-          </v-col>
-          <v-col col="2">
-            <UnitSelector label="Unit" :unit="line_item.unit"/>
-          </v-col>
-          <v-col col="2">
-            <v-text-field label="Unit Price ($)" v-model="line_item.unit_price"/>
-          </v-col>
-          <v-col col="2">
-            <v-text-field label="Total Price ($)" v-model="line_item.price"/>
-          </v-col>
-        </v-row>
-        <!--    <v-container>-->
-        <!--      <v-row>-->
-        <!--    <ReceiptLineItemField-->
-        <!--      :line_item_id="line_item.id"-->
-        <!--      field="quantity"-->
-        <!--      :value="line_item.quantity"-->
-        <!--      cols="2"-->
-        <!--    />-->
-
-        <!--    <ReceiptLineItemField-->
-        <!--      :line_item_id="line_item.id"-->
-        <!--      field="unit"-->
-        <!--      :value="line_item.unit == null ? null : line_item.unit.name"-->
-        <!--      cols="2"-->
-        <!--    />-->
-
-        <!--    <ReceiptLineItemField-->
-        <!--      :line_item_id="line_item.id"-->
-        <!--      field="unit_price"-->
-        <!--      :value="line_item.unit_price"-->
-        <!--      cols="2"-->
-        <!--    />-->
-
-        <!--    <ReceiptLineItemField-->
-        <!--      :line_item_id="line_item.id"-->
-        <!--      field="unit_price"-->
-        <!--      :value="line_item.unit_price"-->
-        <!--      cols="2"-->
-        <!--    />-->
-
-        <!--    <ReceiptLineItemField-->
-        <!--      :line_item_id="line_item.id"-->
-        <!--      field="total_price"-->
-        <!--      :value="line_item.total_price"-->
-        <!--      cols="2"-->
-        <!--    />-->
-        <!--      </v-row>-->
-        <!--    </v-container>-->
-      </v-form>
-<!--  </v-container>-->
+  <v-form style="width:100%">
+    <v-row>
+      <v-col col="2">
+        <v-text-field label="Product" v-model="line_item.product.pretty_name" type="text"/>
+      </v-col>
+      <v-col col="2">
+        <v-text-field label="Quantity" v-model="line_item.quantity" type="number" step="0.001"
+                      @change="patchField('line-items', line_item.id, 'quantity', $event.target)"/>
+      </v-col>
+      <v-col col="2">
+        <UnitSelector label="Unit" v-model:unit="line_item.unit"
+                      @update.unit="console.log"/>
+      </v-col>
+      <v-col col="2">
+        <v-text-field label="Unit Price" v-model="line_item.unit_price" prefix="$" type="number" step="0.01"
+                      @change="patchField('line-items', line_item.id, 'unit_price', $event.target)"/>
+      </v-col>
+      <v-col col="2">
+        <v-text-field label="Total Price" v-model="line_item.price" prefix="$" type="number" step="0.01"
+                      @change="patchField('line-items', line_item.id, 'price', $event.target)"/>
+      </v-col>
+    </v-row>
+  </v-form>
 </template>
 
 <script setup lang="ts">
 import {computed} from "vue";
 import UnitSelector from "@/components/UnitSelector.vue";
+import {patchField} from "@/utils";
 
 const props = defineProps(["line_item"])
 

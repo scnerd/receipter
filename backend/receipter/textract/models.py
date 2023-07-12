@@ -46,7 +46,7 @@ class Currency(BaseModel):
         HKD = "HKD"
 
     code: CurrencyCode = Field(alias="Code")
-    confidence: float = Field(alias="Confidence")
+    confidence: float | None = Field(alias="Confidence", default=None)
 
 
 class GroupProperty(BaseModel):

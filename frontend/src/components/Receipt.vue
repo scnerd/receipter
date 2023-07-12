@@ -31,8 +31,10 @@
               <v-col cols="3">
                 <v-text-field
                   v-model="receipt.total_paid"
-                  label="Total ($)"
+                  label="Total"
                   type="number"
+                  prefix="$"
+                  step="0.01"
                 />
               </v-col>
             </v-row>

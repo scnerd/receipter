@@ -41,9 +41,15 @@ class LocationSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
+    pretty_name = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = Product
         fields = "__all__"
+
+    @staticmethod
+    def get_pretty_name(obj):
+        return str(obj)
 
 
 class ProductAliasSerializer(serializers.ModelSerializer):
@@ -77,6 +83,8 @@ class ReceiptFileSerializer(serializers.ModelSerializer):
 
 
 class LineItemSerializer(serializers.ModelSerializer):
+    product = ProductSerializer()
+
     class Meta:
         model = LineItem
         exclude = ("receipt",)

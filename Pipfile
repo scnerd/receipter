@@ -7,13 +7,12 @@ name = "pypi"
 uvicorn = "*"
 watchfiles = "*"
 boto3 = "*"
-easygui = "*"
 pydantic = ">=2"
-typer = "*"
 django = "*"
 django-extensions = "*"
 django-rest-framework = "*"
 django-cors-headers = "*"
+pymupdf = "*"
 
 [dev-packages]
 black = {version = "*", extras = ["d"]}
