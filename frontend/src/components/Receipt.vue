@@ -32,6 +32,7 @@
                   v-model="receipt.date"
                   label="Date"
                   type="date"
+                  @update:modelValue="patchField('receipts', receipt.id, 'date', $event.target.value)"
                 />
               </v-col>
               <v-col cols="3">
@@ -41,6 +42,7 @@
                   type="number"
                   prefix="$"
                   step="0.01"
+                  @update:modelValue="patchField('receipts', receipt.id, 'total_paid', $event.target.value)"
                 />
               </v-col>
             </v-row>
@@ -71,12 +73,12 @@
 <script setup lang="ts">
 import {computed} from "vue";
 import ReceiptLineItem from "./ReceiptLineItem.vue";
-import {handleErrors} from "@/utils";
+import {handleErrors, patchField} from "@/utils";
 
 const props = defineProps(["receipt"])
 
 const title = computed(() => {
-  return `${props.receipt.date} - ${props.receipt.location.store.name} ($ ${props.receipt.total_price})`
+  return `${props.receipt.date} - ${props.receipt.location.store.name} ($ ${props.receipt.total_paid})`
 })
 
 async function deleteReceipt() {

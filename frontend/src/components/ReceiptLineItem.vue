@@ -6,18 +6,19 @@
       </v-col>
       <v-col col="2">
         <v-text-field label="Quantity" v-model="line_item.quantity" type="number" step="0.001"
-                      @change="patchField('line-items', line_item.id, 'quantity', $event.target)"/>
+                      @change="patchField('line-items', line_item.id, 'quantity', $event.target.value)"/>
       </v-col>
       <v-col col="2">
-        <UnitSelector label="Unit" v-model:unit="line_item.unit"/>
+        <UnitSelector label="Unit" v-model="line_item.unit"
+                      @update:modelValue="u => patchField('line-items', line_item.id, 'unit', u.id)"/>
       </v-col>
       <v-col col="2">
         <v-text-field label="Unit Price" v-model="line_item.unit_price" prefix="$" type="number" step="0.01"
-                      @change="patchField('line-items', line_item.id, 'unit_price', $event.target)"/>
+                      @change="patchField('line-items', line_item.id, 'unit_price', $event.target.value)"/>
       </v-col>
       <v-col col="2">
         <v-text-field label="Total Price" v-model="line_item.price" prefix="$" type="number" step="0.01"
-                      @change="patchField('line-items', line_item.id, 'price', $event.target)"/>
+                      @change="patchField('line-items', line_item.id, 'price', $event.target.value)"/>
       </v-col>
     </v-row>
   </v-form>

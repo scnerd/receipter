@@ -11,7 +11,7 @@ export const useReceiptsStore = defineStore('receipts', () => {
   const initialized = ref(false)
 
   async function refresh() {
-    fetch("http://localhost:8000/api/receipts/")
+    fetch("http://localhost:9000/api/receipts/")
       .then(handleErrors)
       .then((response) => response.json())
       .then(data => receipts.value = data.results)

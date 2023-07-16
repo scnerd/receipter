@@ -13,6 +13,9 @@ django-extensions = "*"
 django-rest-framework = "*"
 django-cors-headers = "*"
 pymupdf = "*"
+pillow = "*"
+django-environ = "*"
+psycopg2-binary = "*"
 
 [dev-packages]
 black = {version = "*", extras = ["d"]}

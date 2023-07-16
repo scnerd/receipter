@@ -1,5 +1,10 @@
+import textwrap
+from typing import Callable
+
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.db.models import ManyToOneRel
+from django.db.transaction import atomic
 
 
 def CurrencyField(*args, **kwargs):
@@ -14,44 +19,74 @@ def QuantityField(*args, **kwargs):
     return models.DecimalField(*args, **kwargs)
 
 
-class ProductCategory(models.Model):
+class TextualModelManager(models.Manager):
+    __text_field_name__: str = ""
+
+    def get_or_create_by_text(self, text: str, get_kwargs: Callable[[], dict] = dict):
+        try:
+            return self.get(**{self.__text_field_name__: text}), False
+        except self.model.DoesNotExist:
+            return self.create(**{self.__text_field_name__: text, **get_kwargs()}), True
+
+
+class OCRManager(TextualModelManager):
+    __text_field_name__: str = "ocr_text"
+
+
+class OCRModel(models.Model):
+    ocr_text = models.TextField(unique=True, db_index=True, editable=False)
+    value = None
+
+    objects = OCRManager()
+
+    class Meta:
+        abstract = True
+
+    def __str__(self):
+        return f"{self.value} [{textwrap.shorten(self.ocr_text, width=40, placeholder='...')}]"
+
+
+class TextManager(TextualModelManager):
+    __text_field_name__: str = "name"
+
+
+class TextModel(models.Model):
+    name = models.TextField(unique=True, db_index=True)
+
+    class Meta:
+        abstract = True
+
+    def __str__(self):
+        return self.name
+
+
+class ProductCategory(TextModel):
     parent_category = models.ForeignKey(
         "ProductCategory", on_delete=models.SET_NULL, null=True, blank=True
     )
-    name = models.TextField(unique=True, db_index=True)
 
     def __str__(self):
         return self.name
 
 
-class Store(models.Model):
-    name = models.TextField(unique=True, db_index=True)
-
-    def __str__(self):
-        return self.name
+class Store(TextModel):
+    pass
 
 
-class StoreAlias(models.Model):
-    name = models.TextField(unique=True, db_index=True)
+class StoreAlias(OCRModel):
+    value = models.ForeignKey(Store, on_delete=models.CASCADE)
+
+
+class Location(TextModel):
     store = models.ForeignKey(Store, on_delete=models.CASCADE)
 
-    def __str__(self):
-        return f"{self.store.name}[{self.name}]"
+
+class LocationAlias(OCRModel):
+    value = models.ForeignKey(Location, on_delete=models.CASCADE)
 
 
-class Location(models.Model):
-    name = models.TextField(unique=True, db_index=True)
-    store = models.ForeignKey(Store, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return f"{self.store.name}[{self.name}]"
-
-
-class Brand(models.Model):
-    name = models.TextField(unique=True, db_index=True)
-
-    def __str__(self):
-        return self.name
+class Brand(TextModel):
+    pass
 
 
 class Packaging(models.Model):
@@ -83,11 +118,10 @@ class Packaging(models.Model):
                 )
 
 
-class Product(models.Model):
+class Product(TextModel):
     category = models.ForeignKey(
         ProductCategory, on_delete=models.SET_NULL, null=True, blank=True
     )
-    name = models.TextField()
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True)
     packaging = models.ForeignKey(
         Packaging, on_delete=models.SET_NULL, null=True, blank=True
@@ -111,15 +145,14 @@ class Product(models.Model):
                 )
 
 
-class ProductAlias(models.Model):
-    name = models.TextField()
-    store = models.ForeignKey(Store, on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+class ProductAlias(OCRModel):
+    store_alias = models.ForeignKey(StoreAlias, on_delete=models.CASCADE)
+    value = models.ForeignKey(Product, on_delete=models.CASCADE)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["name", "store"], name="unique_name_per_store"
+                fields=["ocr_text", "store_alias"], name="unique_name_per_store"
             )
         ]
 
@@ -127,15 +160,14 @@ class ProductAlias(models.Model):
         return f"{self.product.name}[{self.store.name}.{self.name}]"
 
 
-class ProductCode(models.Model):
-    code = models.TextField()
-    store = models.ForeignKey(Store, on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+class ProductCode(OCRModel):
+    store_alias = models.ForeignKey(StoreAlias, on_delete=models.CASCADE)
+    value = models.ForeignKey(Product, on_delete=models.CASCADE)
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["code", "store"], name="unique_code_per_store"
+                fields=["ocr_text", "store_alias"], name="unique_code_per_store"
             )
         ]
 
@@ -143,19 +175,12 @@ class ProductCode(models.Model):
         return f"{self.product.name}[{self.store.name}.{self.code}]"
 
 
-class Unit(models.Model):
-    name = models.TextField(unique=True, db_index=True)
-
-    def __str__(self):
-        return self.name
+class Unit(TextModel):
+    pass
 
 
-class UnitAlias(models.Model):
-    text = models.TextField(unique=True, db_index=True)
-    unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return f"{self.unit.name}[{self.text}]"
+class UnitAlias(OCRModel):
+    value = models.ForeignKey(Unit, on_delete=models.CASCADE)
 
 
 class ReceiptFile(models.Model):
@@ -171,7 +196,7 @@ class Receipt(models.Model):
     source = models.OneToOneField(
         ReceiptFile, on_delete=models.CASCADE, null=True, blank=True
     )
-    location = models.ForeignKey(
+    location_alias = models.ForeignKey(
         Location, on_delete=models.CASCADE, null=True, blank=True
     )
     date = models.DateField(null=True, blank=True, auto_created=True)

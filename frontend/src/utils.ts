@@ -8,7 +8,7 @@ export function handleErrors(response: Response) {
 
 export async function patchField(model: string, pk: number, field: string, value: any) {
   await fetch(
-    `http://localhost:8000/api/${model}/${pk}/`,
+    `http://localhost:9000/api/${model}/${pk}/`,
     {
       method: 'PATCH',
       headers: {

@@ -12,7 +12,7 @@ from receipter.models import (
     UnitAlias,
     ReceiptFile,
     Receipt,
-    LineItem,
+    LineItem, LocationAlias,
 )
 
 
@@ -37,6 +37,12 @@ class StoreAliasSerializer(serializers.ModelSerializer):
 class LocationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Location
+        fields = "__all__"
+
+
+class LocationAliasSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LocationAlias
         fields = "__all__"
 
 

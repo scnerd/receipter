@@ -11,7 +11,7 @@
           <v-expansion-panel-text>
             <v-row align="center" justify="center">
               <v-col cols="1">
-                <v-progress-circular v-model="uploadingReceiptProgress" indeterminate></v-progress-circular>
+                <v-progress-circular v-if="uploadingReceipt" v-model="uploadingReceiptProgress" indeterminate></v-progress-circular>
               </v-col>
               <v-col cols="11">
                 <v-file-input accept="image/*" v-model="file" @change="onFileChange"></v-file-input>
@@ -46,10 +46,6 @@ const file = ref(null)
 const uploadingReceipt = ref(false)
 const uploadingReceiptProgress = ref(0)
 
-// fetch('http://localhost:8000/api/receipts/')
-//   .then(response => response.json())
-//   .then(data => receipts.value = data.results)
-
 async function onFileChange(e) {
   showFileInput.value = false
   uploadingReceipt.value = true
@@ -59,7 +55,7 @@ async function onFileChange(e) {
   formdata.append("image_file", e.target.files[0]);
 
   let analysis_result = await fetch(
-    "http://localhost:8000/api/receipt-files/analyze/",
+    "http://localhost:9000/api/receipt-files/analyze/",
     {method: 'POST', body: formdata}
   )
     .then(handleErrors)

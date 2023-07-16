@@ -12,7 +12,7 @@ export const useUnitsStore = defineStore('units', () => {
 
   async function createUnit(name: string) {
     await fetch(
-      "http://localhost:8000/api/units/",
+      "http://localhost:9000/api/units/",
       {
         method: 'POST',
         headers: {
@@ -26,7 +26,7 @@ export const useUnitsStore = defineStore('units', () => {
       .then(data => units.value.unshift(data))
   }
 
-  fetch("http://localhost:8000/api/units/")
+  fetch("http://localhost:9000/api/units/")
     .then(handleErrors)
     .then((response) => response.json())
     .then(data => units.value = data.results.map(unit => ({id: unit.id, name: unit.name})))

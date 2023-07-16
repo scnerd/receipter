@@ -45,7 +45,7 @@ from receipter.models import (
     UnitAlias,
     ReceiptFile,
     Receipt,
-    LineItem,
+    LineItem, LocationAlias,
 )
 from receipter.textract.models import AnalyzeExpenseResponse
 
@@ -253,9 +253,18 @@ class ReceiptFileViewSet(viewsets.ModelViewSet):
                 store = Store.objects.get_or_create(name=store_name)[0]
                 StoreAlias.objects.create(name=store_name, store=store)
 
-            location = Location.objects.get_or_create(
-                store=store,
-                name=address,
+            location_alias = LocationAlias.objects.get_or_create_by_text(
+                address,
+                lambda: dict(
+                    value=Location.objects.get_or_create_by_text(
+                        address,
+                        lambda: dict(
+                            value=Store.objects.get_or_create_by_text(
+                                address,
+                            )
+                        )
+                    )
+                )
             )[0]
 
             receipt = Receipt.objects.create(
