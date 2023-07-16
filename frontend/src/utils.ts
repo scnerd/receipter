@@ -1,8 +1,9 @@
 export function handleErrors(response: Response) {
   if (!response.ok) {
-    throw Error(response.statusText);
+    console.log(response)
+    throw Error(response.statusText)
   }
-  return response;
+  return response
 }
 
 export async function patchField(model: string, pk: number, field: string, value: any) {

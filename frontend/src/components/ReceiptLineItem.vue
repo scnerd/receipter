@@ -9,8 +9,7 @@
                       @change="patchField('line-items', line_item.id, 'quantity', $event.target)"/>
       </v-col>
       <v-col col="2">
-        <UnitSelector label="Unit" v-model:unit="line_item.unit"
-                      @update.unit="console.log"/>
+        <UnitSelector label="Unit" v-model:unit="line_item.unit"/>
       </v-col>
       <v-col col="2">
         <v-text-field label="Unit Price" v-model="line_item.unit_price" prefix="$" type="number" step="0.01"

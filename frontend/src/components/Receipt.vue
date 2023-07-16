@@ -2,8 +2,14 @@
   <v-expansion-panel
     :key="receipt.id"
     v-bind="props"
-    :title="title"
   >
+    <v-expansion-panel-title>
+      <v-col class="text-left"><span>{{ title }}</span></v-col>
+      <v-col class="text-right">
+        <v-btn variant="outlined" color="red" @click="deleteReceipt">Delete</v-btn>
+      </v-col>
+    </v-expansion-panel-title>
+
     <v-expansion-panel-text>
       <v-container fluid>
         <v-row>
@@ -65,10 +71,24 @@
 <script setup lang="ts">
 import {computed} from "vue";
 import ReceiptLineItem from "./ReceiptLineItem.vue";
+import {handleErrors} from "@/utils";
 
 const props = defineProps(["receipt"])
 
 const title = computed(() => {
   return `${props.receipt.date} - ${props.receipt.location.store.name} ($ ${props.receipt.total_price})`
 })
+
+async function deleteReceipt() {
+  await fetch(
+    `http://localhost:8000/api/receipts/${props.receipt.id}/`,
+    {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json"
+      }
+    }
+  )
+    .then(handleErrors);
+}
 </script>

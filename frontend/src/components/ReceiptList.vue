@@ -46,9 +46,9 @@ const file = ref(null)
 const uploadingReceipt = ref(false)
 const uploadingReceiptProgress = ref(0)
 
-fetch('http://localhost:8000/api/receipts/')
-  .then(response => response.json())
-  .then(data => receipts.value = data.results)
+// fetch('http://localhost:8000/api/receipts/')
+//   .then(response => response.json())
+//   .then(data => receipts.value = data.results)
 
 async function onFileChange(e) {
   showFileInput.value = false
@@ -65,12 +65,16 @@ async function onFileChange(e) {
     .then(handleErrors)
     .then(response => response.json())
 
-  let new_receipt = await fetch(
-    `http://localhost:8000/api/receipts/${analysis_result.receipt_id}/`
-  )
-    .then(handleErrors)
-    .then(response => response.json())
+  await receiptStore.refresh()
 
-  receipts.value.unshift(new_receipt)
+  // let new_receipt = await fetch(
+  //   `http://localhost:8000/api/receipts/${analysis_result.receipt_id}/`
+  // )
+  //   .then(handleErrors)
+  //   .then(response => response.json())
+
+  // receipts.value.unshift(new_receipt)
+
+  uploadingReceipt.value = false
 }
 </script>
