@@ -22,13 +22,14 @@ from rest_framework import routers
 
 from receipter.api.viewsets import ProductCategoryViewSet, StoreViewSet, StoreAliasViewSet, LocationViewSet, \
     ProductViewSet, ProductAliasViewSet, ProductCodeViewSet, UnitViewSet, UnitAliasViewSet, ReceiptFileViewSet, \
-    ReceiptViewSet, LineItemViewSet
+    ReceiptViewSet, LineItemViewSet, BrandViewSet
 
 router = routers.DefaultRouter()
 router.register(r'categories', ProductCategoryViewSet)
 router.register(r'stores', StoreViewSet)
 router.register(r'stores-aliases', StoreAliasViewSet)
 router.register(r'locations', LocationViewSet)
+router.register(r'brands', BrandViewSet)
 router.register(r'products', ProductViewSet)
 router.register(r'product-aliases', ProductAliasViewSet)
 router.register(r'product-codes', ProductCodeViewSet)

@@ -1,10 +1,8 @@
 import textwrap
 from typing import Callable
 
-from django.contrib.auth import get_user_model
+from django.core.validators import RegexValidator
 from django.db import models
-from django.db.models import ManyToOneRel
-from django.db.transaction import atomic
 
 
 def CurrencyField(*args, **kwargs):
@@ -53,6 +51,8 @@ class TextManager(TextualModelManager):
 class TextModel(models.Model):
     name = models.TextField(unique=True, db_index=True)
 
+    objects = TextManager()
+
     class Meta:
         abstract = True
 
@@ -89,13 +89,28 @@ class Brand(TextModel):
     pass
 
 
-class Packaging(models.Model):
-    unit = models.ForeignKey("Unit", on_delete=models.SET_NULL, null=True, blank=True)
-    quantity = QuantityField(null=True, blank=True)
-    packaging_type = models.TextField(null=True, blank=True, help_text="Bag, Box, etc.")
+class Product(TextModel):
+    variant = models.TextField(null=True, blank=True)
+    category = models.ForeignKey(
+        ProductCategory, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True)
 
-    def __str__(self):
-        match (self.unit, self.quantity, self.packaging_type):
+    package_unit = models.ForeignKey("Unit", on_delete=models.SET_NULL, null=True, blank=True)
+    package_quantity = QuantityField(null=True, blank=True)
+    package_type = models.TextField(null=True, blank=True, help_text="Bag, Box, etc.")
+
+    @property
+    def packaging_pretty_str(self):
+        match self.package_quantity:
+            case None:
+                cleaned_quantity = None
+            case i if i == int(i):
+                cleaned_quantity = int(i)
+            case i:
+                cleaned_quantity = i
+
+        match (self.package_unit, cleaned_quantity, self.package_type):
             case (None, None, None):
                 return ""
             case (u, None, None):
@@ -107,42 +122,24 @@ class Packaging(models.Model):
             case (u, q, None):
                 return f"{q} {u.name}"
             case (u, None, pt):
-                return f"1 {u.name} ({pt})"
+                return f"1 {u.name} {pt}"
             case (None, q, pt):
-                return f"{q} ({pt})"
+                return f"{q} {pt}s"
             case (u, q, pt):
-                return f"{q} {u.name} ({pt})"
+                return f"{q} {u.name} {pt}"
             case _:
                 raise RuntimeError(
-                    f"Unhandled combination: {self.unit}, {self.quantity}, {self.packaging_type}"
+                    f"Unhandled combination: {self.package_unit}, {self.package_quantity}, {self.package_type}"
                 )
-
-
-class Product(TextModel):
-    category = models.ForeignKey(
-        ProductCategory, on_delete=models.SET_NULL, null=True, blank=True
-    )
-    brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True)
-    packaging = models.ForeignKey(
-        Packaging, on_delete=models.SET_NULL, null=True, blank=True
-    )
 
     def __str__(self):
-        match (self.brand, self.packaging):
-            case (None, None):
-                return self.name
-            case (None, p) if not str(p):
-                return self.name
-            case (b, None):
-                return f"{self.name} [{b}]"
-            case (None, p):
-                return f"{self.name} ({p})"
-            case (b, p):
-                return f"{self.name} [{b}] ({p})"
-            case _:
-                raise RuntimeError(
-                    f"Unhandled combination: {self.brand}, {self.packaging}"
-                )
+        entries = [self.name]
+        if self.variant:
+            entries.append(self.variant)
+        if self.packaging_pretty_str:
+            entries.append(self.packaging_pretty_str)
+
+        return ' - '.join(entries)
 
 
 class ProductAlias(OCRModel):
@@ -156,9 +153,6 @@ class ProductAlias(OCRModel):
             )
         ]
 
-    def __str__(self):
-        return f"{self.product.name}[{self.store.name}.{self.name}]"
-
 
 class ProductCode(OCRModel):
     store_alias = models.ForeignKey(StoreAlias, on_delete=models.CASCADE)
@@ -171,9 +165,6 @@ class ProductCode(OCRModel):
             )
         ]
 
-    def __str__(self):
-        return f"{self.product.name}[{self.store.name}.{self.code}]"
-
 
 class Unit(TextModel):
     pass
@@ -185,10 +176,11 @@ class UnitAlias(OCRModel):
 
 class ReceiptFile(models.Model):
     # user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
-    image_file = models.ImageField(upload_to="receipt_images")
-    analysis_file = models.FileField(
-        upload_to="receipt_analyses", null=True, blank=True
-    )
+    image_sha256 = models.CharField(max_length=64, unique=True, db_index=True, validators=[
+        RegexValidator(r'[a-f0-9]{64}')
+    ])
+    image_file = models.ImageField(upload_to="receipts/images")
+    analysis_file = models.FileField(upload_to="receipts/analyses")
 
 
 class Receipt(models.Model):
@@ -197,21 +189,35 @@ class Receipt(models.Model):
         ReceiptFile, on_delete=models.CASCADE, null=True, blank=True
     )
     location_alias = models.ForeignKey(
-        Location, on_delete=models.CASCADE, null=True, blank=True
+        LocationAlias, on_delete=models.CASCADE, null=True, blank=True
     )
     date = models.DateField(null=True, blank=True, auto_created=True)
     total_paid = CurrencyField(null=True, blank=True)
+
+    @property
+    def location(self):
+        return self.location_alias.value if self.location_alias else None
+
+    @property
+    def store(self):
+        return self.location.store if self.location else None
 
 
 class LineItem(models.Model):
     receipt = models.ForeignKey(
         Receipt, on_delete=models.CASCADE, related_name="line_items"
     )
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product_code = models.ForeignKey(ProductCode, on_delete=models.SET_NULL, null=True, blank=True)
+    product_alias = models.ForeignKey(ProductAlias, on_delete=models.SET_NULL, null=True, blank=True)
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True)
     price = CurrencyField(null=True, blank=True)
     quantity = QuantityField(null=True, blank=True)
-    unit = models.ForeignKey(Unit, on_delete=models.CASCADE, null=True, blank=True)
+    unit_alias = models.ForeignKey(UnitAlias, on_delete=models.SET_NULL, null=True, blank=True)
+    unit = models.ForeignKey(Unit, on_delete=models.SET_NULL, null=True, blank=True)
     unit_price = CurrencyField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['id']
 
     def __str__(self):
         return f"{self.product} - {self.quantity}x{self.unit} @ {self.unit_price}/{self.unit} = {self.price}"

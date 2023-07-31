@@ -12,8 +12,17 @@ from receipter.models import (
     UnitAlias,
     ReceiptFile,
     Receipt,
-    LineItem, LocationAlias,
+    LineItem,
+    LocationAlias,
+    Brand,
 )
+
+
+class StringifiedModelSerializer(serializers.ModelSerializer):
+    pretty_name = serializers.SerializerMethodField(read_only=True)
+
+    def get_pretty_name(self, obj):
+        return str(obj)
 
 
 class ProductCategorySerializer(serializers.ModelSerializer):
@@ -28,7 +37,9 @@ class StoreSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class StoreAliasSerializer(serializers.ModelSerializer):
+class StoreAliasSerializer(StringifiedModelSerializer):
+    value = StoreSerializer()
+
     class Meta:
         model = StoreAlias
         fields = "__all__"
@@ -40,31 +51,48 @@ class LocationSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class LocationAliasSerializer(serializers.ModelSerializer):
+class LocationAliasSerializer(StringifiedModelSerializer):
+    value = LocationSerializer()
+
     class Meta:
         model = LocationAlias
         fields = "__all__"
 
 
-class ProductSerializer(serializers.ModelSerializer):
-    pretty_name = serializers.SerializerMethodField(read_only=True)
+class BrandSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Brand
+        fields = "__all__"
+
+
+class UnitSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Unit
+        fields = "__all__"
+
+
+class ProductSerializer(StringifiedModelSerializer):
+    package_unit_detail = UnitSerializer(source="package_unit", read_only=True)
+    brand_detail = BrandSerializer(source="brand", read_only=True)
+    category_detail = ProductCategorySerializer(source="category", read_only=True)
 
     class Meta:
         model = Product
         fields = "__all__"
-
-    @staticmethod
-    def get_pretty_name(obj):
-        return str(obj)
+        # depth = 1
 
 
-class ProductAliasSerializer(serializers.ModelSerializer):
+class ProductAliasSerializer(StringifiedModelSerializer):
+    value = ProductSerializer()
+
     class Meta:
         model = ProductAlias
         fields = "__all__"
 
 
-class ProductCodeSerializer(serializers.ModelSerializer):
+class ProductCodeSerializer(StringifiedModelSerializer):
+    value = ProductSerializer()
+
     class Meta:
         model = ProductCode
         fields = "__all__"
@@ -89,18 +117,20 @@ class ReceiptFileSerializer(serializers.ModelSerializer):
 
 
 class LineItemSerializer(serializers.ModelSerializer):
-    product = ProductSerializer()
+    product_detail = ProductSerializer(source="product", read_only=True)
+    unit_detail = UnitSerializer(source="unit", read_only=True)
 
     class Meta:
         model = LineItem
         exclude = ("receipt",)
-        depth = 1
 
 
 class ReceiptSerializer(serializers.ModelSerializer):
     line_items = LineItemSerializer(many=True, read_only=True)
+    location_detail = LocationSerializer(source="location", read_only=True)
+    store_detail = StoreSerializer(source="store", read_only=True)
+    source = ReceiptFileSerializer()
 
     class Meta:
         model = Receipt
         fields = "__all__"
-        depth = 2

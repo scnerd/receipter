@@ -3,5 +3,5 @@
 </template>
 
 <script lang="ts" setup>
-  import ReceiptList from '@/components/ReceiptList.vue'
+  import ReceiptList from '@/components/receipts/ReceiptList.vue'
 </script>

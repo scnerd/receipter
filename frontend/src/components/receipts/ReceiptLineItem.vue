@@ -1,23 +1,25 @@
 <template>
   <v-form style="width:100%">
     <v-row>
-      <v-col col="2">
-        <v-text-field label="Product" v-model="line_item.product.pretty_name" type="text"/>
+      <v-col cols="3">
+<!--        <v-text-field label="Product" v-model="line_item.product.pretty_name" type="text"/>-->
+        <ProductSelector label="Product" v-model="line_item.product_detail"
+                      @update:modelValue="p => patchField('line-items', line_item.id, 'product', p.id)"/>
       </v-col>
-      <v-col col="2">
-        <v-text-field label="Quantity" v-model="line_item.quantity" type="number" step="0.001"
+      <v-col cols="2">
+        <v-text-field label="Quantity" v-model.lazy="line_item.quantity" type="number" step="0.001"
                       @change="patchField('line-items', line_item.id, 'quantity', $event.target.value)"/>
       </v-col>
-      <v-col col="2">
-        <UnitSelector label="Unit" v-model="line_item.unit"
+      <v-col cols="3">
+        <UnitSelector label="Unit" v-model="line_item.unit_detail"
                       @update:modelValue="u => patchField('line-items', line_item.id, 'unit', u.id)"/>
       </v-col>
-      <v-col col="2">
-        <v-text-field label="Unit Price" v-model="line_item.unit_price" prefix="$" type="number" step="0.01"
+      <v-col cols="2">
+        <v-text-field label="Unit Price" v-model.lazy="line_item.unit_price" prefix="$" type="number" step="0.01"
                       @change="patchField('line-items', line_item.id, 'unit_price', $event.target.value)"/>
       </v-col>
-      <v-col col="2">
-        <v-text-field label="Total Price" v-model="line_item.price" prefix="$" type="number" step="0.01"
+      <v-col cols="2">
+        <v-text-field label="Total Price" v-model.lazy="line_item.price" prefix="$" type="number" step="0.01"
                       @change="patchField('line-items', line_item.id, 'price', $event.target.value)"/>
       </v-col>
     </v-row>
@@ -26,7 +28,8 @@
 
 <script setup lang="ts">
 import {computed} from "vue";
-import UnitSelector from "@/components/UnitSelector.vue";
+import UnitSelector from "@/components/units/UnitSelector.vue";
+import ProductSelector from "@/components/products/ProductSelector.vue";
 import {patchField} from "@/utils";
 
 const props = defineProps(["line_item"])

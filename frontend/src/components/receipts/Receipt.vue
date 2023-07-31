@@ -16,33 +16,38 @@
           <v-form style="width:100%">
             <v-row>
               <v-col cols="3">
-                <v-text-field
-                  v-model="receipt.location.store.name"
+                <v-autocomplete
+                  v-model="receipt.store_detail.name"
+                  :items="storesStore.stores"
+                  item-title="name"
+                  item-value="id"
                   label="Store"
+                  @change="patchField('stores', receipt.store_detail.id, 'name', $event.target.value)"
                 />
               </v-col>
               <v-col cols="3">
                 <v-text-field
-                  v-model="receipt.location.name"
+                  v-model.lazy="receipt.location_detail.name"
                   label="Location"
+                  @change="patchField('locations', receipt.location_detail.id, 'name', $event.target.value)"
                 />
               </v-col>
               <v-col cols="3">
                 <v-text-field
-                  v-model="receipt.date"
+                  v-model.lazy="receipt.date"
                   label="Date"
                   type="date"
-                  @update:modelValue="patchField('receipts', receipt.id, 'date', $event.target.value)"
+                  @change="patchField('receipts', receipt.id, 'date', $event.target.value)"
                 />
               </v-col>
               <v-col cols="3">
                 <v-text-field
-                  v-model="receipt.total_paid"
+                  v-model.lazy="receipt.total_paid"
                   label="Total"
                   type="number"
                   prefix="$"
                   step="0.01"
-                  @update:modelValue="patchField('receipts', receipt.id, 'total_paid', $event.target.value)"
+                  @change="patchField('receipts', receipt.id, 'total_paid', $event.target.value)"
                 />
               </v-col>
             </v-row>
@@ -50,11 +55,11 @@
         </v-row>
         <v-row>
           <!--Receipt image-->
-          <v-col cols="5">
+          <v-col cols="4">
             <v-img :src="receipt.source.image_file" alt="Image of receipt"></v-img>
           </v-col>
           <!--Receipt line items-->
-          <v-col col="7">
+          <v-col col="8">
             <v-container fluid>
               <v-row v-for="line_item in receipt.line_items" :key="line_item.id">
                 <ReceiptLineItem
@@ -74,16 +79,21 @@
 import {computed} from "vue";
 import ReceiptLineItem from "./ReceiptLineItem.vue";
 import {handleErrors, patchField} from "@/utils";
+import {useStoreStore} from "@/store/app";
+import {useLocationStore} from "@/store/app";
 
 const props = defineProps(["receipt"])
 
+const storesStore = useStoreStore()
+const locationsStore = useLocationStore()
+
 const title = computed(() => {
-  return `${props.receipt.date} - ${props.receipt.location.store.name} ($ ${props.receipt.total_paid})`
+  return `${props.receipt.date} - ${props.receipt.store_detail.name} ($ ${props.receipt.total_paid})`
 })
 
 async function deleteReceipt() {
   await fetch(
-    `http://localhost:8000/api/receipts/${props.receipt.id}/`,
+    `http://localhost:9000/api/receipts/${props.receipt.id}/`,
     {
       method: "DELETE",
       headers: {

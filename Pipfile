@@ -16,6 +16,7 @@ pymupdf = "*"
 pillow = "*"
 django-environ = "*"
 psycopg2-binary = "*"
+django-filter = "*"
 
 [dev-packages]
 black = {version = "*", extras = ["d"]}

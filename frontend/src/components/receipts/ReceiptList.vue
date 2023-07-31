@@ -38,9 +38,9 @@
 import {ref} from 'vue'
 import Receipt from './Receipt.vue'
 import {handleErrors} from "@/utils";
-import {useReceiptsStore} from "@/store/receipts";
+import {useReceiptStore} from "@/store/app";
 
-const receiptStore = useReceiptsStore()
+const receiptStore = useReceiptStore()
 const showFileInput = ref(false)
 const file = ref(null)
 const uploadingReceipt = ref(false)

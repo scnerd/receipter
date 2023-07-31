@@ -1,6 +1,9 @@
 from django.contrib import admin
 
-from receipter.models import ProductCategory, Store, StoreAlias, Location, Product, ProductAlias, ProductCode, Unit, UnitAlias, ReceiptFile, Receipt, LineItem
+from receipter.models import ProductCategory, Store, StoreAlias, Location, Product, ProductAlias, ProductCode, Unit, \
+    UnitAlias, ReceiptFile, Receipt, LineItem, Brand
+
+
 # Register your models here.
 
 
@@ -26,6 +29,12 @@ class StoreAliasAdmin(admin.ModelAdmin):
 class LocationAdmin(admin.ModelAdmin):
     class Meta:
         model = Location
+
+
+@admin.register(Brand)
+class BrandAdmin(admin.ModelAdmin):
+    class Meta:
+        model = Brand
 
 
 @admin.register(Product)

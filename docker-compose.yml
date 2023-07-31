@@ -18,6 +18,8 @@ services:
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - ./_db:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
 
   frontend:
     image: zauberzeug/nicegui

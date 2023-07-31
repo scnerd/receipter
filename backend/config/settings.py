@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "receipter",
     "rest_framework",
+    'django_filters',
 ]
 
 MIDDLEWARE = [
@@ -91,8 +92,8 @@ DATABASES = {
         "NAME": env.str("POSTGRES_DB"),
         "USER": env.str("POSTGRES_USER"),
         "PASSWORD": env.str("POSTGRES_PASSWORD"),
-        "HOST": "postgres",
-        "PORT": "5432",
+        "HOST": env.str("POSTGRES_HOST", "postgres"),
+        "PORT": env.int("POSTGRES_PORT", "5432"),
 
     }
 }
@@ -142,5 +143,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10
+    'PAGE_SIZE': 10,
+    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
 }

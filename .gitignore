@@ -174,3 +174,4 @@ _sample_files
 *.sqlite*
 backend/media
 *.ipynb
+_db
