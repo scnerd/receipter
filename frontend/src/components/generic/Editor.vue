@@ -37,7 +37,8 @@ const submitting = ref(false)
 
 async function submit(event) {
   submitting.value = true
-  let result = await props.store.update(props.object)
+  let mutator = props.mutator ?? ((x: object) => x)
+  let result = await props.store.update(mutator(props.object))
   emits("update:object", result)
   submitting.value = false
   showDialog.value = false

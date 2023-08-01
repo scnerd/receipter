@@ -3,7 +3,7 @@
     <v-row>
       <v-col cols="3">
 <!--        <v-text-field label="Product" v-model="line_item.product.pretty_name" type="text"/>-->
-        <ProductSelector label="Product" v-model="line_item.product_detail"
+        <ProductSelector v-model="line_item.product"
                       @update:modelValue="p => patchField('line-items', line_item.id, 'product', p.id)"/>
       </v-col>
       <v-col cols="2">
@@ -11,7 +11,7 @@
                       @change="patchField('line-items', line_item.id, 'quantity', $event.target.value)"/>
       </v-col>
       <v-col cols="3">
-        <UnitSelector label="Unit" v-model="line_item.unit_detail"
+        <UnitSelector v-model="line_item.unit"
                       @update:modelValue="u => patchField('line-items', line_item.id, 'unit', u.id)"/>
       </v-col>
       <v-col cols="2">

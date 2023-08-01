@@ -8,7 +8,7 @@
   >
     <template v-slot:default="s">
       <v-text-field v-model="s.object.name" type="text" label="Name"></v-text-field>
-      <StoreSelector v-model="s.object.store_detail" @update:model-value="v => location.store = v"></StoreSelector>
+      <StoreSelector :id="s.object.store" @update:model-value="v => location.store = v"></StoreSelector>
     </template>
   </Editor>
 </template>

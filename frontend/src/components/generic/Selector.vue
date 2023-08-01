@@ -2,7 +2,7 @@
   <v-progress-circular v-if="!store.initialized" indeterminate/>
   <v-autocomplete v-else v-model="obj" :items="store.objectList" :item-title="titleAttr || 'name'" item-value="id"
                   :label="label"
-                  return-object single-line>
+                  return-object single-line auto-select-first>
     <template v-slot:append>
       <v-btn-group class="align-center">
         <slot name="create" :object="obj"></slot>
@@ -17,22 +17,41 @@
         </v-btn>
       </v-btn-group>
     </template>
+    <!--    <template v-slot:message>-->
+    <!--      <v-progress-linear indeterminate v-if="emitting"></v-progress-linear>-->
+    <!--    </template>-->
   </v-autocomplete>
 </template>
 
 <script setup lang="ts">
 import {computed} from "vue";
 
-const props = defineProps(['modelValue', 'store', 'allowClear', 'allowDelete', 'titleAttr', 'label'])
+// const props = defineProps(['id', 'store', 'allowClear', 'allowDelete', 'titleAttr', 'label'])
+const props = defineProps<{
+  id: string,
+  store: any,
+  allowClear: boolean,
+  allowDelete: boolean,
+  titleAttr: string,
+  label: string
+  parentStore?: any
+  parentId?: number
+  parentAttr?: string
+}>()
 
 const emit = defineEmits(["update:modelValue"])
 
+const canSetParent = computed(() => props.parentStore != null && props.parentId != null && props.parentAttr != null)
+
 const obj = computed({
   get() {
-    return props.modelValue;
+    return props.store.objects.get(props.id)
   },
   set(e) {
     emit('update:modelValue', e);
+    if (canSetParent.value) {
+      props.parentStore.update(props.parentId, {[props.parentAttr]: e})
+    }
   }
 })
 

@@ -1,10 +1,10 @@
 <template>
   <Selector
-    v-model="product"
+    :id="product"
     :store="productStore"
     :allow-clear="true"
     :allow-delete="true"
-    title-attr="name"
+    title-attr="pretty_name"
     label="Product"
     >
     <template v-slot:edit="s"><ProductEditor :product="s.object"></ProductEditor></template>

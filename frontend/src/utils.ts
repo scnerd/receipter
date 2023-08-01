@@ -117,9 +117,9 @@ export function defineDRFStore<T extends DBObjBase>(api_endpoint: string) {
       return data
     }
 
-    async function update(obj: PartialDBObj<T>) {
+    async function update(id: number, obj: PartialDBObj<T>) {
       let data = await fetch(
-        `${apiUrl}${obj.id}/`,
+        `${apiUrl}${id}/`,
         {
           method: 'PATCH',
           headers: {

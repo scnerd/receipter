@@ -89,7 +89,8 @@ class Brand(TextModel):
     pass
 
 
-class Product(TextModel):
+class Product(models.Model):
+    name = models.TextField()
     variant = models.TextField(null=True, blank=True)
     category = models.ForeignKey(
         ProductCategory, on_delete=models.SET_NULL, null=True, blank=True

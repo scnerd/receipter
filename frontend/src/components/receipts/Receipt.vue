@@ -16,10 +16,10 @@
           <v-form style="width:100%">
             <v-row>
               <v-col cols="3">
-                <StoreSelector v-model="receipt.location_detail.store_detail" @update:model-value="v => locationStore.update({id: receipt.location, store: v.id})"></StoreSelector>
+                <StoreSelector :id="receipt.location_detail.store" @update:model-value="v => locationStore.update({id: receipt.location, store: v.id})"></StoreSelector>
               </v-col>
               <v-col cols="3">
-                <LocationSelector v-model="receipt.location_detail" @update:model-value="v => receiptStore.update({id: receipt.id, location: v.id})"></LocationSelector>
+                <LocationSelector :id="receipt.location" @update:model-value="v => receiptStore.update(receipt.id, { location: v.id})"></LocationSelector>
               </v-col>
               <v-col cols="3">
                 <EditorLiveField :store="receiptStore" :object="receipt" attribute="date" type="date" label="Date"></EditorLiveField>

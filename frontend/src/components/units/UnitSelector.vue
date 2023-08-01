@@ -1,6 +1,6 @@
 <template>
   <Selector
-    v-model="unit"
+    :id="unit"
     :store="unitStore"
     :allow-clear="true"
     :allow-delete="true"

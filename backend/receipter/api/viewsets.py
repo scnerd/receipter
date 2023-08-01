@@ -109,6 +109,7 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     queryset = Product.objects.all().order_by("name", "-id")
     serializer_class = ProductSerializer
+    page_size = 100
 
 
 class ProductAliasViewSet(viewsets.ModelViewSet):
@@ -393,7 +394,7 @@ class ReceiptViewSet(viewsets.ModelViewSet):
     API endpoint that allows Receipt to be viewed or edited.
     """
 
-    queryset = Receipt.objects.all().order_by("-date").select_related(
+    queryset = Receipt.objects.all().order_by("-date", "-id").select_related(
         'location_alias__value__store',
         'source',
     ).prefetch_related('line_items')

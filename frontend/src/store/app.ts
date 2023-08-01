@@ -320,7 +320,7 @@ export interface LineItem extends DBObjBase {
 
 // And now, we create DRF Stores for each type
 
-export const useProductCategoryStore = defineDRFStore<ProductCategory>('categories');
+export const useCategoryStore = defineDRFStore<ProductCategory>('categories');
 export const useStoreStore = defineDRFStore<Store>('stores');
 export const useStoreAliaStore = defineDRFStore<StoreAlias>('store-aliases');
 export const useLocationStore = defineDRFStore<Location>('locations');
