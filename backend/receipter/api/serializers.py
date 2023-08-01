@@ -46,6 +46,8 @@ class StoreAliasSerializer(StringifiedModelSerializer):
 
 
 class LocationSerializer(serializers.ModelSerializer):
+    store_detail = StoreSerializer(source='store', read_only=True)
+
     class Meta:
         model = Location
         fields = "__all__"
@@ -129,7 +131,7 @@ class ReceiptSerializer(serializers.ModelSerializer):
     line_items = LineItemSerializer(many=True, read_only=True)
     location_detail = LocationSerializer(source="location", read_only=True)
     store_detail = StoreSerializer(source="store", read_only=True)
-    source = ReceiptFileSerializer()
+    source = ReceiptFileSerializer(read_only=True)
 
     class Meta:
         model = Receipt

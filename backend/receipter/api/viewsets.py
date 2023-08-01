@@ -393,7 +393,10 @@ class ReceiptViewSet(viewsets.ModelViewSet):
     API endpoint that allows Receipt to be viewed or edited.
     """
 
-    queryset = Receipt.objects.all().order_by("-date")
+    queryset = Receipt.objects.all().order_by("-date").select_related(
+        'location_alias__value__store',
+        'source',
+    ).prefetch_related('line_items')
     serializer_class = ReceiptSerializer
 
 

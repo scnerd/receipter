@@ -25,7 +25,7 @@
       <v-progress-circular v-if="!receiptStore.initialized" indeterminate color="primary"></v-progress-circular>
       <v-expansion-panels v-else>
         <Receipt
-          v-for="receipt in receiptStore.receipts"
+          v-for="receipt in receiptStore.objectList"
           :key="receipt.id"
           :receipt="receipt"
         />
@@ -62,14 +62,6 @@ async function onFileChange(e) {
     .then(response => response.json())
 
   await receiptStore.refresh()
-
-  // let new_receipt = await fetch(
-  //   `http://localhost:8000/api/receipts/${analysis_result.receipt_id}/`
-  // )
-  //   .then(handleErrors)
-  //   .then(response => response.json())
-
-  // receipts.value.unshift(new_receipt)
 
   uploadingReceipt.value = false
 }

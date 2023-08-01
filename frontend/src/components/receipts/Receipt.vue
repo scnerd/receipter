@@ -16,39 +16,16 @@
           <v-form style="width:100%">
             <v-row>
               <v-col cols="3">
-                <v-autocomplete
-                  v-model="receipt.store_detail.name"
-                  :items="storesStore.stores"
-                  item-title="name"
-                  item-value="id"
-                  label="Store"
-                  @change="patchField('stores', receipt.store_detail.id, 'name', $event.target.value)"
-                />
+                <StoreSelector v-model="receipt.location_detail.store_detail" @update:model-value="v => locationStore.update({id: receipt.location, store: v.id})"></StoreSelector>
               </v-col>
               <v-col cols="3">
-                <v-text-field
-                  v-model.lazy="receipt.location_detail.name"
-                  label="Location"
-                  @change="patchField('locations', receipt.location_detail.id, 'name', $event.target.value)"
-                />
+                <LocationSelector v-model="receipt.location_detail" @update:model-value="v => receiptStore.update({id: receipt.id, location: v.id})"></LocationSelector>
               </v-col>
               <v-col cols="3">
-                <v-text-field
-                  v-model.lazy="receipt.date"
-                  label="Date"
-                  type="date"
-                  @change="patchField('receipts', receipt.id, 'date', $event.target.value)"
-                />
+                <EditorLiveField :store="receiptStore" :object="receipt" attribute="date" type="date" label="Date"></EditorLiveField>
               </v-col>
               <v-col cols="3">
-                <v-text-field
-                  v-model.lazy="receipt.total_paid"
-                  label="Total"
-                  type="number"
-                  prefix="$"
-                  step="0.01"
-                  @change="patchField('receipts', receipt.id, 'total_paid', $event.target.value)"
-                />
+                <EditorLiveField :store="receiptStore" :object="receipt" attribute="total_paid" type="number" label="Total" prefix="$"></EditorLiveField>
               </v-col>
             </v-row>
           </v-form>
@@ -79,16 +56,17 @@
 import {computed} from "vue";
 import ReceiptLineItem from "./ReceiptLineItem.vue";
 import {handleErrors, patchField} from "@/utils";
-import {useStoreStore} from "@/store/app";
-import {useLocationStore} from "@/store/app";
+import StoreSelector from "@/components/stores/StoreSelector.vue";
+import LocationSelector from "@/components/locations/LocationSelector.vue";
+import {useLocationStore, useReceiptStore} from "@/store/app";
+import EditorLiveField from "@/components/generic/EditorLiveField.vue";
 
 const props = defineProps(["receipt"])
-
-const storesStore = useStoreStore()
-const locationsStore = useLocationStore()
+const receiptStore = useReceiptStore()
+const locationStore = useLocationStore()
 
 const title = computed(() => {
-  return `${props.receipt.date} - ${props.receipt.store_detail.name} ($ ${props.receipt.total_paid})`
+  return `${props.receipt.date} - ${props.receipt.location_detail.store_detail.name} ($ ${props.receipt.total_paid})`
 })
 
 async function deleteReceipt() {

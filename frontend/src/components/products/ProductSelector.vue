@@ -1,21 +1,21 @@
 <template>
-  <v-progress-circular v-if="!productStore.initialized" indeterminate/>
-  <v-autocomplete v-else v-model="product" :items="productStore.products" item-title="pretty_name" item-value="id"
-                  label="Product"
-                  return-object single-line>
-    <template v-slot:append>
-      <v-btn-group class="align-center">
-        <ProductEditor :product="product" @update:product="p => product = p"></ProductEditor>
-      </v-btn-group>
-    </template>
-  </v-autocomplete>
+  <Selector
+    v-model="product"
+    :store="productStore"
+    :allow-clear="true"
+    :allow-delete="true"
+    title-attr="name"
+    label="Product"
+    >
+    <template v-slot:edit="s"><ProductEditor :product="s.object"></ProductEditor></template>
+  </Selector>
 </template>
 
 <script setup lang="ts">
 import {useProductStore} from "@/store/app";
 import {computed, ref} from "vue";
+import Selector from "@/components/generic/Selector.vue";
 import ProductEditor from "@/components/products/ProductEditor.vue";
-import BrandCreator from "@/components/brands/BrandCreator.vue";
 
 const props = defineProps(['modelValue'])
 
@@ -31,18 +31,4 @@ const product = computed({
     emit('update:modelValue', e);
   }
 })
-
-// const newProductName = ref("")
-// const creatingProduct = ref(false)
-
-// async function createNewProduct() {
-//   if (newProductName.value) {
-//     newProductName.value = ""
-//     creatingProduct.value = true
-//
-//     const newProduct = await productStore.createNewProduct(newProductName.value)
-//     selectedProduct.value = newProduct
-//     creatingProduct.value = false
-//   }
-// }
 </script>

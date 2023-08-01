@@ -191,16 +191,9 @@ class Receipt(models.Model):
     location_alias = models.ForeignKey(
         LocationAlias, on_delete=models.CASCADE, null=True, blank=True
     )
+    location = models.ForeignKey(Location, on_delete=models.SET_NULL, null=True, blank=True)
     date = models.DateField(null=True, blank=True, auto_created=True)
     total_paid = CurrencyField(null=True, blank=True)
-
-    @property
-    def location(self):
-        return self.location_alias.value if self.location_alias else None
-
-    @property
-    def store(self):
-        return self.location.store if self.location else None
 
 
 class LineItem(models.Model):

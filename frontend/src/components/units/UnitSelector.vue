@@ -18,7 +18,6 @@ import {computed, ref} from "vue";
 import UnitCreator from "@/components/units/UnitCreator.vue";
 import Selector from "@/components/generic/Selector.vue";
 import UnitEditor from "@/components/units/UnitEditor.vue";
-import BrandCreator from "@/components/brands/BrandCreator.vue";
 
 const props = defineProps(['modelValue'])
 
